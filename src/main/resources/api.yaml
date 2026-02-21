@@ -1,0 +1,248 @@
+openapi: 3.0.1
+info:
+  title: Recipe API
+  version: 1.0.0
+  description: API for managing recipes.
+
+
+
+paths:
+  /recipes:
+    get:
+      summary: Get all recipes
+      operationId: getRecipes
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipeDto'
+    post:
+      summary: Create a new recipe
+      operationId: createRecipe
+      security:
+        - oidcAuth: [ "user" ] # Erfordert die Rolle "user"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeDto'
+      responses:
+        '201':
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDto'
+    put:
+      summary: Update a recipe
+      operationId: updateRecipe
+      security:
+        - oidcAuth: [ "user" ] # Erfordert die Rolle "user"
+      requestBody:
+        description: The updated recipe
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeDto'
+      responses:
+        '200':
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDto'
+  /recipes/{id}:
+    get:
+      summary: Get a recipe by ID
+      operationId: getRecipeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDto'
+        '404':
+          description: Recipe not found
+    delete:
+      summary: Delete a recipe
+      operationId: deleteRecipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Recipe deleted
+
+  /recipes/{id}/image:
+    post:
+      summary: Upload an image for a recipe
+      operationId: uploadRecipeImage
+      security:
+        - oidcAuth: [ "user" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrl:
+                    type: string
+        '400':
+          description: Invalid image file
+        '404':
+          description: Recipe not found
+
+    get:
+      summary: Download the image for a recipe
+      operationId: downloadRecipeImage
+      security:
+        - oidcAuth: [ "user" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        '200':
+          description: Image retrieved successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Recipe or image not found
+
+
+
+components:
+  schemas:
+    RecipeDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: The unique identifier of the recipe
+        name:
+          type: string
+          description: The name of the recipe
+        recipeIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredientDto'
+        cookingInstructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CookingInstructionDto'
+        portions:
+          type: integer
+          description: The number of portions the recipe yields
+        duration:
+          type: string
+          format: duration
+          description: The duration it takes to prepare the recipe
+
+    RecipeIngredientDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the ingredient
+        category:
+          type: string
+          enum:
+            - DAIRY
+            - MEAT
+            - FISH
+            - BAKERY
+            - FRUITS
+            - VEGETABLES
+            - BEVERAGES
+            - FROZEN
+            - DRY_GOODS
+            - SWEETS
+            - ORGANIC
+            - VEGAN
+            - ELECTRONICS
+            - CLOTHING
+            - BOOKS
+            - HOME_AND_KITCHEN
+            - BEAUTY
+            - SPORTS
+            - TOYS
+            - SPICES
+            - AUTOMOTIVE
+            - OTHER
+        quantity:
+          type: number
+          format: double
+          description: The quantity of the ingredient
+        unit:
+          type: string
+          description: The unit of measurement for the ingredient
+
+    CookingInstructionDto:
+      type: object
+      properties:
+        instruction:
+          type: string
+          description: The text of the instruction
+        recipeIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredientDto'
+
+
+
+    # Message queue transfer object
+    RecipeInfoDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        recipeIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredientDto'
+        portions:
+          type: integer
+          description: The number of portions the recipe yields

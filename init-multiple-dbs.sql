@@ -1,0 +1,3 @@
+CREATE DATABASE recipe;
+CREATE DATABASE shoppinglist;
+CREATE DATABASE meal_plan;
