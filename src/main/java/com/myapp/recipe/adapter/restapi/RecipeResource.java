@@ -4,6 +4,7 @@ import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.ErrorResponse;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.application.RecipeService;
+import com.myapp.recipe.domain.model.Ingredient;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
 import com.myapp.recipe.domain.model.User;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.openapitools.api.RecipesApi;
+import org.openapitools.model.IngredientDto;
 import org.openapitools.model.RecipeDto;
 
 import java.io.File;
@@ -30,7 +32,7 @@ import java.util.Optional;
 @Consumes(MediaType.APPLICATION_JSON)
 @NonBlocking
 @Slf4j
-public class RecipeResource implements RecipesApi {
+public class RecipeResource implements RecipesApi  {
 
     private final RecipeService recipeService;
     private final RecipeConverter recipeConverter;
@@ -127,5 +129,16 @@ public class RecipeResource implements RecipesApi {
         }
 
         return Response.ok(imageFile).header("Content-Disposition", "attachment; filename=\"" + imageFile.getName() + "\"").build();
+    }
+
+    @Override
+    public Response getIngredients() {
+        User currentUser = User.fromToken(jwt);
+        List<Ingredient> ingredients = recipeService.getIngredients(new UserId(currentUser.id().value()));
+        if (ingredients.isEmpty()) {
+            return Response.noContent().build();
+        }
+        return Response.ok(ingredients.stream().map(ingredient -> IngredientDto.builder().name(ingredient.name()).category(IngredientDto.CategoryEnum.valueOf(ingredient.productCategory().name())))).build();
+
     }
 }

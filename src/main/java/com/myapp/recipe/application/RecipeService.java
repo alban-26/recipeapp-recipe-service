@@ -2,7 +2,9 @@ package com.myapp.recipe.application;
 
 
 import com.my.common.api.AbstractAccess;
+import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.restapi.FileService;
+import com.myapp.recipe.domain.model.Ingredient;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
 import com.myapp.recipe.domain.model.RecipeInfo;
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -62,6 +65,10 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         log.debug("Recipe with ID {} published", info.id());
 
         return savedRecipe;
+    }
+
+    public List<Ingredient> getIngredients(UserId userId) {
+        return recipeRepository.fetchIngredients(userId);
     }
 
     public void deleteById(RecipeId id) {

@@ -3,12 +3,15 @@ package com.myapp.recipe.adapter.database;
 import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.adapter.database.entities.*;
+import com.myapp.recipe.domain.model.Ingredient;
+import com.myapp.recipe.domain.model.ProductCategory;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
 import com.myapp.recipe.domain.service.RecipeRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +44,12 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     public List<Recipe> findAllByUser(UserId userId) {
         List<RecipeEntity> recipeEntities = recipeMapper.selectRecipesByUser(userId.value());
         return recipeEntities.stream().map(recipeConverter::entityToDomain).toList();
+    }
+
+    @Override
+    public List<Ingredient> fetchIngredients(UserId userId) {
+        List<IngredientEntity> ingredientEntities = recipeMapper.selectIngredientsByUserId(userId.value());
+        return ingredientEntities.stream().map(ingredientEntity -> new Ingredient(ingredientEntity.getName(), ProductCategory.valueOf(ingredientEntity.getCategory()))).toList();
     }
 
 

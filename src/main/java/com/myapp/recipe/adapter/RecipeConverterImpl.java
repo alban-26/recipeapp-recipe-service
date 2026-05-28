@@ -1,10 +1,7 @@
 package com.myapp.recipe.adapter;
 
 import com.my.common.api.UserId;
-import com.myapp.recipe.adapter.database.entities.CookingInstructionEntity;
-import com.myapp.recipe.adapter.database.entities.InstructionIngredientEntity;
-import com.myapp.recipe.adapter.database.entities.RecipeEntity;
-import com.myapp.recipe.adapter.database.entities.RecipeIngredientEntity;
+import com.myapp.recipe.adapter.database.entities.*;
 import com.myapp.recipe.domain.model.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.openapitools.model.CookingInstructionDto;

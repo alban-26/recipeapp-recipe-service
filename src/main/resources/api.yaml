@@ -149,6 +149,19 @@ paths:
           description: Recipe or image not found
 
 
+  /recipes/ingredients:
+    get:
+      summary: Get all ingredients
+      operationId: getIngredients
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IngredientDto'
 
 components:
   schemas:
@@ -177,6 +190,38 @@ components:
           type: string
           format: duration
           description: The duration it takes to prepare the recipe
+
+    IngredientDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the ingredient
+        category:
+          type: string
+          enum:
+            - DAIRY
+            - MEAT
+            - FISH
+            - BAKERY
+            - FRUITS
+            - VEGETABLES
+            - BEVERAGES
+            - FROZEN
+            - DRY_GOODS
+            - SWEETS
+            - ORGANIC
+            - VEGAN
+            - ELECTRONICS
+            - CLOTHING
+            - BOOKS
+            - HOME_AND_KITCHEN
+            - BEAUTY
+            - SPORTS
+            - TOYS
+            - SPICES
+            - AUTOMOTIVE
+            - OTHER
 
     RecipeIngredientDto:
       type: object
@@ -216,6 +261,8 @@ components:
         unit:
           type: string
           description: The unit of measurement for the ingredient
+
+
 
     CookingInstructionDto:
       type: object
