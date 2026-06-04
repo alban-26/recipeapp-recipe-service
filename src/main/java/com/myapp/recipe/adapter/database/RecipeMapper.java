@@ -44,8 +44,8 @@ public interface RecipeMapper {
     @Select("SELECT id, name, category FROM ingredient")
     List<IngredientEntity> selectAllIngredients();
 
-    @Select("select ingredient.name, ingredient.category from recipe join recipe_ingredient on recipe_ingredient.recipe_id = recipe.id" +
-            "join ingredient on ingredient.id = recipe_ingredient.ingredient_id" +
+    @Select("select ingredient.name, ingredient.category from recipe join recipe_ingredient on recipe_ingredient.recipe_id = recipe.id " +
+            "join ingredient on ingredient.id = recipe_ingredient.ingredient_id " +
             "where user_id = #{userId}")
     List<IngredientEntity> selectIngredientsByUserId(String userId);
 

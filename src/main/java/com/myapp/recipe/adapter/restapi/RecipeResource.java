@@ -138,7 +138,8 @@ public class RecipeResource implements RecipesApi  {
         if (ingredients.isEmpty()) {
             return Response.noContent().build();
         }
-        return Response.ok(ingredients.stream().map(ingredient -> IngredientDto.builder().name(ingredient.name()).category(IngredientDto.CategoryEnum.valueOf(ingredient.productCategory().name())))).build();
+        List<IngredientDto> ingredientDtos = ingredients.stream().map(ingredient -> IngredientDto.builder().name(ingredient.name()).category(IngredientDto.CategoryEnum.valueOf(ingredient.productCategory().name())).build()).toList();
+        return Response.ok(ingredientDtos).build();
 
     }
 }
