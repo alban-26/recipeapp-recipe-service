@@ -61,8 +61,13 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
                 savedRecipe.portions(),
                 savedRecipe.userId()
         );
-        messagePublisher.publishRecipeInfo(info);
-        log.debug("Recipe with ID {} published", info.id());
+
+        try {
+            messagePublisher.publishRecipeInfo(info);
+            log.debug("Recipe with ID {} published", info.id());
+        } catch (Exception e) {
+            log.error("Failed to publish recipe with ID {}", info.id(), e);
+        }
 
         return savedRecipe;
     }
