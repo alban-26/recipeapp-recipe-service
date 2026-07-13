@@ -1,5 +1,7 @@
 package com.myapp.recipe.adapter.restapi;
 
+import com.my.common.api.PageRequest;
+import com.my.common.api.PageResult;
 import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.ErrorResponse;
 import com.myapp.recipe.adapter.RecipeConverter;
@@ -19,7 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.openapitools.api.RecipesApi;
 import org.openapitools.model.IngredientDto;
+import org.openapitools.model.PaginationRequest;
 import org.openapitools.model.RecipeDto;
+import org.openapitools.model.RecipePageDto;
 
 import java.io.File;
 import java.io.InputStream;
@@ -85,13 +89,28 @@ public class RecipeResource implements RecipesApi  {
     }
 
     @Override
-    public Response getRecipes() {
+    public Response getRecipes(PaginationRequest pagination) {
         User currentUser = User.fromToken(jwt);
-        List<Recipe> recipes = recipeService.getAllByUser(new UserId(currentUser.id().value()));
-        if (recipes.isEmpty()) {
-            return Response.noContent().build();
-        }
-        return Response.ok(recipes.stream().map(recipeConverter::domainToDto)).build();
+
+        PageResult<Recipe> page = recipeService.getAllByUser(
+                new UserId(currentUser.id().value()),
+                new PageRequest(pagination.getPage(), pagination.getSize())
+        );
+
+        RecipePageDto response = new RecipePageDto();
+
+        response.setContent(
+                page.content()
+                        .stream()
+                        .map(recipeConverter::domainToDto)
+                        .toList()
+        );
+
+        response.setPage(page.page());
+        response.setSize(page.size());
+        response.setTotalElements(page.totalElements());
+
+        return Response.ok(response).build();
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.myapp.recipe.adapter.database;
 
+import com.my.common.api.PageRequest;
+import com.my.common.api.PageResult;
 import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.adapter.database.entities.*;
@@ -44,6 +46,21 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     public List<Recipe> findAllByUser(UserId userId) {
         List<RecipeEntity> recipeEntities = recipeMapper.selectRecipesByUser(userId.value());
         return recipeEntities.stream().map(recipeConverter::entityToDomain).toList();
+    }
+
+    @Override
+    public PageResult<Recipe> findAllByUser(UserId userId, PageRequest pageRequest) {
+        List<RecipeEntity> entities =
+                recipeMapper.selectRecipesByUserPaged(userId.value(), pageRequest.size(), pageRequest.offset());
+
+        long total = recipeMapper.countRecipesByUser(userId.value());
+
+        return new PageResult<>(
+                entities.stream().map(recipeConverter::entityToDomain).toList(),
+                total,
+                pageRequest.page(),
+                pageRequest.size()
+        );
     }
 
     @Override

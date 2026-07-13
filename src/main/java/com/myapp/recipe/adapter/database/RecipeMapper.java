@@ -183,4 +183,39 @@ public interface RecipeMapper {
                     many = @Many(select = "selectCookingInstructions"))
     })
     List<RecipeEntity> selectRecipesByUser(String userId);
+
+    @Select("""
+    SELECT id AS recipeId,
+           name,
+           portions,
+           duration,
+           user_id
+    FROM recipe
+    WHERE user_id = #{userId}
+    LIMIT #{limit}
+    OFFSET #{offset}
+    """)
+    @Results({
+            @Result(property = "id", column = "recipeId"),
+            @Result(property = "name", column = "name"),
+            @Result(property = "portions", column = "portions"),
+            @Result(property = "duration", column = "duration", typeHandler = DurationTypeHandler.class),
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "recipeIngredients", javaType = List.class, column = "recipeId",
+                    many = @Many(select = "selectRecipeIngredients")),
+            @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
+                    many = @Many(select = "selectCookingInstructions"))
+    })
+    List<RecipeEntity> selectRecipesByUserPaged(
+            @Param("userId") String userId,
+            @Param("limit") int limit,
+            @Param("offset") int offset);
+
+
+    @Select("""
+    SELECT COUNT(*)
+    FROM recipe
+    WHERE user_id = #{userId}
+    """)
+    long countRecipesByUser(@Param("userId") String userId);
 }

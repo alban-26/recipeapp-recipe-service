@@ -11,15 +11,22 @@ paths:
     get:
       summary: Get all recipes
       operationId: getRecipes
+      parameters:
+        - in: query
+          name: pagination
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/PaginationRequest'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RecipeDto'
+                $ref: '#/components/schemas/RecipePageDto'
+
     post:
       summary: Create a new recipe
       operationId: createRecipe
@@ -191,6 +198,29 @@ components:
           format: duration
           description: The duration it takes to prepare the recipe
 
+    RecipePageDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeDto'
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          example: 153
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+
     IngredientDto:
       type: object
       properties:
@@ -293,3 +323,16 @@ components:
         portions:
           type: integer
           description: The number of portions the recipe yields
+
+
+    PaginationRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 0
+        size:
+          type: integer
+          default: 20
+        sort:
+          type: string
