@@ -13,7 +13,7 @@ import java.util.List;
 
 public interface RecipeRepository extends Repository<Recipe, RecipeId> {
 
-    List<Recipe> findAllByUser(UserId userId);
+    //List<Recipe> findAllByUser(UserId userId);
 
     List<Ingredient> fetchIngredients(UserId userId);
 

@@ -13,12 +13,25 @@ paths:
       operationId: getRecipes
       parameters:
         - in: query
-          name: pagination
+          name: page
           required: false
-          style: form
-          explode: true
           schema:
-            $ref: '#/components/schemas/PaginationRequest'
+            type: integer
+            default: 0
+
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            default: 20
+
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+
       responses:
         '200':
           description: Successful operation
@@ -215,11 +228,18 @@ components:
           type: integer
           format: int64
           example: 153
+        totalPages:
+          type: integer
+          example: 8
+        last:
+          type: boolean
       required:
         - content
         - page
         - size
         - totalElements
+        - totalPages
+        - last
 
     IngredientDto:
       type: object

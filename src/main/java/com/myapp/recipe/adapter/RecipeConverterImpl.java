@@ -18,7 +18,7 @@ public class RecipeConverterImpl implements RecipeConverter {
     @Override
     public Recipe dtoToDomain(RecipeDto recipeDto) {
         return new Recipe(
-                new RecipeId(recipeDto.getId()),
+                recipeDto.getId() != null ? new RecipeId(recipeDto.getId()) : new RecipeId(0L),
                 recipeDto.getName(),
                 createRecipeIngredientsFromDtos(recipeDto.getRecipeIngredients()),
                 createCookingInstructionsFromDtos(recipeDto.getCookingInstructions()),

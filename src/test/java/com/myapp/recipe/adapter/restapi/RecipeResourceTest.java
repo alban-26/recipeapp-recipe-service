@@ -1,5 +1,6 @@
 package com.myapp.recipe.adapter.restapi;
 
+import com.my.common.api.PageResult;
 import com.my.common.api.UserId;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.application.RecipeService;
@@ -12,6 +13,7 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.model.RecipeDto;
@@ -20,8 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @QuarkusTest
@@ -43,13 +44,21 @@ class RecipeResourceTest {
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testGetRecipes_returnsList() {
-        // Mock domain + DTO
         Recipe recipe = new Recipe(new RecipeId(1L), "Pasta", null, null, 0, null, new UserId("user1"));
         RecipeDto dto = new RecipeDto();
         dto.setId(1L);
         dto.setName("Pasta");
 
-        Mockito.when(recipeService.getAllByUser(any())).thenReturn(List.of(recipe));
+        PageResult<Recipe> pageResult = new PageResult<>(
+                List.of(recipe), // content
+                1L,              // totalElements
+                1,               // totalPages
+                0,               // page
+                20,              // size
+                true             // last
+        );
+
+        Mockito.when(recipeService.getAllByUser(any(), any())).thenReturn(pageResult);
         Mockito.when(recipeConverter.domainToDto(recipe)).thenReturn(dto);
 
         given()
@@ -58,20 +67,30 @@ class RecipeResourceTest {
                 .get("/recipes")
                 .then()
                 .statusCode(200)
-                .body("[0].name", equalTo("Pasta"));
+                .body("content[0].name", equalTo("Pasta"));
     }
 
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testGetRecipes_noContent() {
-        Mockito.when(recipeService.getAllByUser(any())).thenReturn(List.of());
+        PageResult<Recipe> emptyPage = new PageResult<>(
+                List.of(), // content
+                0L,        // totalElements
+                0,         // totalPages
+                0,         // page
+                20,        // size
+                true        // last
+        );
+
+        Mockito.when(recipeService.getAllByUser(any(), any())).thenReturn(emptyPage);
 
         given()
                 .accept(ContentType.JSON)
                 .when()
                 .get("/recipes")
                 .then()
-                .statusCode(204);
+                .statusCode(200)
+                .body("content", empty());
     }
 
     @Test

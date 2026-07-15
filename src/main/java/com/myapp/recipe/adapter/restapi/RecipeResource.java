@@ -89,29 +89,32 @@ public class RecipeResource implements RecipesApi  {
     }
 
     @Override
-    public Response getRecipes(PaginationRequest pagination) {
+    public Response getRecipes(Integer page, Integer size, String sort) {
         User currentUser = User.fromToken(jwt);
 
-        PageResult<Recipe> page = recipeService.getAllByUser(
+        PageResult<Recipe> resultPage = recipeService.getAllByUser(
                 new UserId(currentUser.id().value()),
-                new PageRequest(pagination.getPage(), pagination.getSize())
+                new PageRequest(page, size)
         );
 
         RecipePageDto response = new RecipePageDto();
 
         response.setContent(
-                page.content()
+                resultPage.content()
                         .stream()
                         .map(recipeConverter::domainToDto)
                         .toList()
         );
 
-        response.setPage(page.page());
-        response.setSize(page.size());
-        response.setTotalElements(page.totalElements());
+        response.setPage(resultPage.page());
+        response.setSize(resultPage.size());
+        response.setTotalElements(resultPage.totalElements());
+        response.setLast(resultPage.last());
+        response.setTotalPages(resultPage.totalPages());
 
         return Response.ok(response).build();
     }
+
 
     @Override
     public Response updateRecipe(RecipeDto recipeDto) {

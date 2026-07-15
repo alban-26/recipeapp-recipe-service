@@ -51,15 +51,25 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     @Override
     public PageResult<Recipe> findAllByUser(UserId userId, PageRequest pageRequest) {
         List<RecipeEntity> entities =
-                recipeMapper.selectRecipesByUserPaged(userId.value(), pageRequest.size(), pageRequest.offset());
+                recipeMapper.selectRecipesByUserPaged(
+                        userId.value(),
+                        pageRequest.size(),
+                        pageRequest.offset());
 
         long total = recipeMapper.countRecipesByUser(userId.value());
 
+        int totalPages = (int) Math.ceil((double) total / pageRequest.size());
+        boolean last = pageRequest.page() >= totalPages - 1;
+
         return new PageResult<>(
-                entities.stream().map(recipeConverter::entityToDomain).toList(),
+                entities.stream()
+                        .map(recipeConverter::entityToDomain)
+                        .toList(),
                 total,
+                totalPages,
                 pageRequest.page(),
-                pageRequest.size()
+                pageRequest.size(),
+                last
         );
     }
 
