@@ -1,8 +1,9 @@
 package com.myapp.recipe.adapter.restapi;
 
-import com.my.common.api.PageRequest;
-import com.my.common.api.PageResult;
+
 import com.my.common.api.UserId;
+import com.my.common.api.pagination.PageRequest;
+import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.ErrorResponse;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.application.RecipeService;
@@ -21,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.openapitools.api.RecipesApi;
 import org.openapitools.model.IngredientDto;
-import org.openapitools.model.PaginationRequest;
 import org.openapitools.model.RecipeDto;
 import org.openapitools.model.RecipePageDto;
 
@@ -88,13 +88,14 @@ public class RecipeResource implements RecipesApi  {
         }
     }
 
+
     @Override
-    public Response getRecipes(Integer page, Integer size, String sort) {
+    public Response getRecipes(Integer page, Integer size, String sort, String searchQuery) {
         User currentUser = User.fromToken(jwt);
 
         PageResult<Recipe> resultPage = recipeService.getAllByUser(
                 new UserId(currentUser.id().value()),
-                new PageRequest(page, size)
+                new PageRequest(page, size, searchQuery)
         );
 
         RecipePageDto response = new RecipePageDto();

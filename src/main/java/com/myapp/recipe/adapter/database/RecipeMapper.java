@@ -185,16 +185,21 @@ public interface RecipeMapper {
     List<RecipeEntity> selectRecipesByUser(String userId);
 
     @Select("""
-    SELECT id AS recipeId,
-           name,
-           portions,
-           duration,
-           user_id
-    FROM recipe
-    WHERE user_id = #{userId}
-    LIMIT #{limit}
-    OFFSET #{offset}
-    """)
+            <script>
+            SELECT id AS recipeId,
+                   name,
+                   portions,
+                   duration,
+                   user_id
+            FROM recipe
+            WHERE user_id = #{userId}
+            <if test="searchQuery != null and searchQuery != ''">
+                AND name ILIKE CONCAT('%', #{searchQuery}, '%')
+            </if>
+            LIMIT #{limit}
+            OFFSET #{offset}
+            </script>
+            """)
     @Results({
             @Result(property = "id", column = "recipeId"),
             @Result(property = "name", column = "name"),
@@ -209,13 +214,14 @@ public interface RecipeMapper {
     List<RecipeEntity> selectRecipesByUserPaged(
             @Param("userId") String userId,
             @Param("limit") int limit,
-            @Param("offset") int offset);
+            @Param("offset") int offset,
+            @Param("searchQuery") String searchQuery);
 
 
     @Select("""
-    SELECT COUNT(*)
-    FROM recipe
-    WHERE user_id = #{userId}
-    """)
+            SELECT COUNT(*)
+            FROM recipe
+            WHERE user_id = #{userId}
+            """)
     long countRecipesByUser(@Param("userId") String userId);
 }

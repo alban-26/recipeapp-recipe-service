@@ -1,8 +1,9 @@
 package com.myapp.recipe.adapter.database;
 
-import com.my.common.api.PageRequest;
-import com.my.common.api.PageResult;
+
 import com.my.common.api.UserId;
+import com.my.common.api.pagination.PageRequest;
+import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.adapter.database.entities.*;
 import com.myapp.recipe.domain.model.Ingredient;
@@ -54,7 +55,7 @@ public class RecipeRepositoryImpl implements RecipeRepository {
                 recipeMapper.selectRecipesByUserPaged(
                         userId.value(),
                         pageRequest.size(),
-                        pageRequest.offset());
+                        pageRequest.offset(), pageRequest.searchQuery());
 
         long total = recipeMapper.countRecipesByUser(userId.value());
 

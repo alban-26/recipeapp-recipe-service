@@ -1,7 +1,7 @@
 package com.myapp.recipe.adapter.restapi;
 
-import com.my.common.api.PageResult;
 import com.my.common.api.UserId;
+import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.application.RecipeService;
 import com.myapp.recipe.domain.model.Recipe;
@@ -11,9 +11,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
-import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.model.RecipeDto;
