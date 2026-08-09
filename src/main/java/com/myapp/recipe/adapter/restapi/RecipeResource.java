@@ -57,7 +57,7 @@ public class RecipeResource implements RecipesApi  {
     public Response createRecipe(RecipeDto recipeDto) {
 
         User currentUser = User.fromToken(jwt);
-        log.info("User {} is creating recipe {}", currentUser.username(), recipeDto.getName());
+        log.info("User {} is creating recipe {}", currentUser.id(), recipeDto.getName());
         Recipe recipe = recipeConverter.dtoToDomain(recipeDto).withUserId(currentUser.id());
         Recipe createdRecipe = recipeService.createRecipe(recipe);
 
@@ -69,7 +69,7 @@ public class RecipeResource implements RecipesApi  {
     @Override
     public Response deleteRecipe(Integer id) {
         User currentUser = User.fromToken(jwt);
-        log.info("User {} is deleting recipe {}", currentUser.username(), id);
+        log.info("User {} is deleting recipe {}", currentUser.id(), id);
 
         recipeService.deleteById(new RecipeId(id));
         return Response.ok().build();
@@ -120,7 +120,7 @@ public class RecipeResource implements RecipesApi  {
     @Override
     public Response updateRecipe(RecipeDto recipeDto) {
         User currentUser = User.fromToken(jwt);
-        log.info("User {} updating recipe {}", currentUser.username(), recipeDto.getId());
+        log.info("User {} updating recipe {}", currentUser.id(), recipeDto.getId());
 
         Recipe updatedRecipe = recipeConverter.dtoToDomain(recipeDto).withUserId(currentUser.id());
         Recipe savedRecipe = recipeService.createRecipe(updatedRecipe);
