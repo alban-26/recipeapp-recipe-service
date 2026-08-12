@@ -37,6 +37,16 @@ paths:
           schema:
             type: string
 
+        - in: query
+          name: tags
+          required: false
+          description: Filter nach Tags (normalisiert, lowercase). Rezept matcht, wenn es mindestens einen der Tags hat.
+          schema:
+            type: array
+            items:
+              type: string
+          explode: true          # ?tags=frühstück&tags=schnell
+
       responses:
         '200':
           description: Successful operation
@@ -215,6 +225,10 @@ components:
           type: string
           format: duration
           description: The duration it takes to prepare the recipe
+        tags:
+          type: array
+          items:
+            type: string
 
     RecipePageDto:
       type: object

@@ -1,15 +1,13 @@
 package com.myapp.recipe.adapter.database;
 
 
+
 import com.my.common.api.UserId;
 import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.adapter.database.entities.*;
-import com.myapp.recipe.domain.model.Ingredient;
-import com.myapp.recipe.domain.model.ProductCategory;
-import com.myapp.recipe.domain.model.Recipe;
-import com.myapp.recipe.domain.model.RecipeId;
+import com.myapp.recipe.domain.model.*;
 import com.myapp.recipe.domain.service.RecipeRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,6 +15,7 @@ import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @ApplicationScoped
 public class RecipeRepositoryImpl implements RecipeRepository {
@@ -47,31 +46,6 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     public List<Recipe> findAllByUser(UserId userId) {
         List<RecipeEntity> recipeEntities = recipeMapper.selectRecipesByUser(userId.value());
         return recipeEntities.stream().map(recipeConverter::entityToDomain).toList();
-    }
-
-    @Override
-    public PageResult<Recipe> findAllByUser(UserId userId, PageRequest pageRequest) {
-        List<RecipeEntity> entities =
-                recipeMapper.selectRecipesByUserPaged(
-                        userId.value(),
-                        pageRequest.size(),
-                        pageRequest.offset(), pageRequest.searchQuery());
-
-        long total = recipeMapper.countRecipesByUser(userId.value());
-
-        int totalPages = (int) Math.ceil((double) total / pageRequest.size());
-        boolean last = pageRequest.page() >= totalPages - 1;
-
-        return new PageResult<>(
-                entities.stream()
-                        .map(recipeConverter::entityToDomain)
-                        .toList(),
-                total,
-                totalPages,
-                pageRequest.page(),
-                pageRequest.size(),
-                last
-        );
     }
 
     @Override
@@ -181,6 +155,44 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     @Override
     public void deleteById(RecipeId id) {
         recipeMapper.deleteRecipe(id.id());
+    }
+
+
+    private void saveTags(Long recipeId, Set<String> tags) {
+        recipeMapper.deleteRecipeTagsByRecipeId(recipeId);   // für Update: alte Links weg
+        if (tags == null) return;
+
+        for (String name : tags) {
+            recipeMapper.insertTag(name);                    // anlegen, falls neu
+            Long tagId = recipeMapper.findTagIdByName(name); // id holen (auch wenn schon vorhanden)
+            recipeMapper.insertRecipeTag(recipeId, tagId);
+        }
+    }
+
+
+    @Override
+    public PageResult<Recipe> findAllByUser(UserId userId, RecipePageRequest recipePageRequest) {
+        List<RecipeEntity> entities =
+                recipeMapper.selectRecipesByUserPaged(
+                        userId.value(),
+                        recipePageRequest.size(),
+                        recipePageRequest.offset(), recipePageRequest.searchQuery(), recipePageRequest.getTags());
+
+        long total = recipeMapper.countRecipesByUser(userId.value(), recipePageRequest.searchQuery(), recipePageRequest.getTags());
+
+        int totalPages = (int) Math.ceil((double) total / recipePageRequest.size());
+        boolean last = recipePageRequest.page() >= totalPages - 1;
+
+        return new PageResult<>(
+                entities.stream()
+                        .map(recipeConverter::entityToDomain)
+                        .toList(),
+                total,
+                totalPages,
+                recipePageRequest.page(),
+                recipePageRequest.size(),
+                last
+        );
     }
 
 

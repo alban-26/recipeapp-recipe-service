@@ -5,9 +5,10 @@ import lombok.With;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Set;
 
 @With
 public record Recipe(RecipeId id, String name, Collection<RecipeIngredient> recipeIngredients,
                      Collection<CookingInstruction> cookingInstructions,
-                     int portions, Duration duration, UserId userId) {
+                     int portions, Duration duration, Set<Tag> tags, UserId userId) {
 }

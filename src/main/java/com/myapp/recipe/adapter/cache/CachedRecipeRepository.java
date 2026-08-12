@@ -2,8 +2,8 @@ package com.myapp.recipe.adapter.cache;
 
 
 import com.my.common.api.UserId;
-import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
+import com.myapp.recipe.adapter.database.RecipePageRequest;
 import com.myapp.recipe.domain.model.Ingredient;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
@@ -33,10 +33,7 @@ public class CachedRecipeRepository implements RecipeRepository {
         return List.of();
     }
 
-    @Override
-    public PageResult<Recipe> findAllByUser(UserId userId, PageRequest pageRequest) {
-        return null;
-    }
+
 
     @Override
     public Recipe save(Recipe recipe) {
@@ -51,5 +48,10 @@ public class CachedRecipeRepository implements RecipeRepository {
     @Override
     public void deleteById(RecipeId recipeId) {
 
+    }
+
+    @Override
+    public PageResult<Recipe> findAllByUser(UserId userId, RecipePageRequest recipePageRequest) {
+        return null;
     }
 }

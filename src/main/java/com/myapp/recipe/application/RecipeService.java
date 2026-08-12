@@ -2,7 +2,11 @@ package com.myapp.recipe.application;
 
 
 import com.my.common.api.AbstractAccess;
+import com.my.common.api.Identifiable;
 import com.my.common.api.UserId;
+import com.my.common.api.pagination.PageRequest;
+import com.my.common.api.pagination.PageResult;
+import com.myapp.recipe.adapter.database.RecipePageRequest;
 import com.myapp.recipe.adapter.restapi.FileService;
 import com.myapp.recipe.domain.model.Ingredient;
 import com.myapp.recipe.domain.model.Recipe;
@@ -23,6 +27,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -118,4 +123,8 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         return recipe.id();
     }
 
+    @Override
+    public PageResult<Recipe> getAllByUser(UserId userId, PageRequest pageRequest) {
+        return Objects.requireNonNull(recipeRepository).findAllByUser(userId, (RecipePageRequest) pageRequest);
+    }
 }

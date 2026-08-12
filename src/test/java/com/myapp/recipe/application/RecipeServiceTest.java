@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class RecipeServiceTest {
                         new CookingInstruction("Bake at 180 degrees for 20 minutes.", Set.of())
                 ),
                 2,
-                Duration.ofMinutes(20),
+                Duration.ofMinutes(20), new HashSet<>(List.of(new Tag("leicht"))),
                 USER_ID
         );
 
@@ -106,6 +107,7 @@ public class RecipeServiceTest {
                 ),
                 2,
                 Duration.ofMinutes(20),
+                new HashSet<>(List.of(new Tag("leicht"))),
                 USER_ID
         );
 

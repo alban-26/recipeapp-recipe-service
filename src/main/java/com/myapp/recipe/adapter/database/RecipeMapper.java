@@ -5,6 +5,7 @@ import com.myapp.recipe.adapter.database.typehandler.DurationTypeHandler;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Mapper
 public interface RecipeMapper {
@@ -152,7 +153,9 @@ public interface RecipeMapper {
             @Result(property = "recipeIngredients", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
-                    many = @Many(select = "selectCookingInstructions"))
+                    many = @Many(select = "selectCookingInstructions")),
+            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+                    many = @Many(select = "selectTagsByRecipeId"))
     })
     RecipeEntity selectRecipe(Long recipeId);
 
@@ -166,7 +169,9 @@ public interface RecipeMapper {
             @Result(property = "recipeIngredients", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
-                    many = @Many(select = "selectCookingInstructions"))
+                    many = @Many(select = "selectCookingInstructions")),
+            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+                    many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipes();
 
@@ -180,26 +185,41 @@ public interface RecipeMapper {
             @Result(property = "recipeIngredients", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
-                    many = @Many(select = "selectCookingInstructions"))
+                    many = @Many(select = "selectCookingInstructions")),
+            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+                    many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipesByUser(String userId);
 
     @Select("""
-            <script>
-            SELECT id AS recipeId,
-                   name,
-                   portions,
-                   duration,
-                   user_id
-            FROM recipe
-            WHERE user_id = #{userId}
-            <if test="searchQuery != null and searchQuery != ''">
-                AND name ILIKE CONCAT('%', #{searchQuery}, '%')
-            </if>
-            LIMIT #{limit}
-            OFFSET #{offset}
-            </script>
-            """)
+    <script>
+    SELECT r.id AS recipeId,
+           r.name,
+           r.portions,
+           r.duration,
+           r.user_id
+    FROM recipe r
+    WHERE r.user_id = #{userId}
+    <if test="searchQuery != null and searchQuery != ''">
+        AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
+    </if>
+    <if test="tags != null and tags.size() > 0">
+        AND (
+            SELECT COUNT(DISTINCT t.name)
+            FROM recipe_tag rt
+            JOIN tag t ON t.id = rt.tag_id
+            WHERE rt.recipe_id = r.id
+              AND t.name IN
+              <foreach item="tag" collection="tags" open="(" separator="," close=")">
+                  #{tag}
+              </foreach>
+        ) = #{tags.size()}
+    </if>
+    ORDER BY r.name ASC
+    LIMIT #{limit}
+    OFFSET #{offset}
+    </script>
+    """)
     @Results({
             @Result(property = "id", column = "recipeId"),
             @Result(property = "name", column = "name"),
@@ -209,19 +229,65 @@ public interface RecipeMapper {
             @Result(property = "recipeIngredients", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
-                    many = @Many(select = "selectCookingInstructions"))
+                    many = @Many(select = "selectCookingInstructions")),
+            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+                    many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipesByUserPaged(
             @Param("userId") String userId,
             @Param("limit") int limit,
             @Param("offset") int offset,
-            @Param("searchQuery") String searchQuery);
+            @Param("searchQuery") String searchQuery,
+            @Param("tags") Set<String> tags);
 
 
     @Select("""
-            SELECT COUNT(*)
-            FROM recipe
-            WHERE user_id = #{userId}
-            """)
-    long countRecipesByUser(@Param("userId") String userId);
+    <script>
+    SELECT COUNT(*)
+    FROM recipe r
+    WHERE r.user_id = #{userId}
+    <if test="searchQuery != null and searchQuery != ''">
+        AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
+    </if>
+    <if test="tags != null and tags.size() > 0">
+        AND (
+            SELECT COUNT(DISTINCT t.name)
+            FROM recipe_tag rt
+            JOIN tag t ON t.id = rt.tag_id
+            WHERE rt.recipe_id = r.id
+              AND t.name IN
+              <foreach item="tag" collection="tags" open="(" separator="," close=")">
+                  #{tag}
+              </foreach>
+        ) = #{tags.size()}
+    </if>
+    </script>
+    """)
+    long countRecipesByUser(
+            @Param("userId") String userId,
+            @Param("searchQuery") String searchQuery,
+            @Param("tags") Set<String> tags);
+
+
+    // ================================
+    // Tags
+    // ================================
+    @Insert("INSERT INTO tag (name) VALUES (#{name}) ON CONFLICT (name) DO NOTHING")
+    void insertTag(@Param("name") String name);
+
+    @Select("SELECT id FROM tag WHERE name = #{name}")
+    Long findTagIdByName(@Param("name") String name);
+
+    @Insert("INSERT INTO recipe_tag (recipe_id, tag_id) " +
+            "VALUES (#{recipeId}, #{tagId}) ON CONFLICT DO NOTHING")
+    void insertRecipeTag(@Param("recipeId") Long recipeId, @Param("tagId") Long tagId);
+
+    @Select("SELECT t.name FROM recipe_tag rt " +
+            "JOIN tag t ON t.id = rt.tag_id " +
+            "WHERE rt.recipe_id = #{recipeId}")
+    List<String> selectTagsByRecipeId(Long recipeId);
+
+    @Delete("DELETE FROM recipe_tag WHERE recipe_id = #{recipeId}")
+    void deleteRecipeTagsByRecipeId(Long recipeId);
+
 }

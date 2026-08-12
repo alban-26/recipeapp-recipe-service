@@ -6,6 +6,7 @@ import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.application.RecipeService;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
+import com.myapp.recipe.domain.model.Tag;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.model.RecipeDto;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +44,7 @@ class RecipeResourceTest {
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testGetRecipes_returnsList() {
-        Recipe recipe = new Recipe(new RecipeId(1L), "Pasta", null, null, 0, null, new UserId("user1"));
+        Recipe recipe = new Recipe(new RecipeId(1L), "Pasta", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))),new UserId("user1"));
         RecipeDto dto = new RecipeDto();
         dto.setId(1L);
         dto.setName("Pasta");
@@ -94,7 +96,7 @@ class RecipeResourceTest {
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testGetRecipeById_found() {
-        Recipe recipe = new Recipe(new RecipeId(1L), "Cake", null, null, 0, null, new UserId("user1"));
+        Recipe recipe = new Recipe(new RecipeId(1L), "Cake", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user1"));
         Mockito.when(recipeService.getById(any())).thenReturn(Optional.of(recipe));
 
         given()
@@ -124,7 +126,7 @@ class RecipeResourceTest {
     void testCreateRecipe_createsSuccessfully() {
         RecipeDto dto = new RecipeDto();
         dto.setName("Soup");
-        Recipe createdRecipe = new Recipe(new RecipeId(10L), "Soup", null, null, 0, null, new UserId("user1"));
+        Recipe createdRecipe = new Recipe(new RecipeId(10L), "Soup", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user1"));
 
         Mockito.when(recipeConverter.dtoToDomain(any())).thenReturn(createdRecipe);
         Mockito.when(recipeService.createRecipe(any())).thenReturn(createdRecipe);

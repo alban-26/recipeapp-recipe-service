@@ -6,11 +6,10 @@ import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.ErrorResponse;
 import com.myapp.recipe.adapter.RecipeConverter;
+import com.myapp.recipe.adapter.database.RecipePageRequest;
+import com.myapp.recipe.adapter.database.RecipePageRequestImpl;
 import com.myapp.recipe.application.RecipeService;
-import com.myapp.recipe.domain.model.Ingredient;
-import com.myapp.recipe.domain.model.Recipe;
-import com.myapp.recipe.domain.model.RecipeId;
-import com.myapp.recipe.domain.model.User;
+import com.myapp.recipe.domain.model.*;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.common.annotation.NonBlocking;
@@ -28,8 +27,10 @@ import org.openapitools.model.RecipePageDto;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Path("/recipes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -88,14 +89,13 @@ public class RecipeResource implements RecipesApi  {
         }
     }
 
-
     @Override
-    public Response getRecipes(Integer page, Integer size, String sort, String searchQuery) {
+    public Response getRecipes(Integer page, Integer size, String sort, String searchQuery, List<String> tags) {
         User currentUser = User.fromToken(jwt);
 
         PageResult<Recipe> resultPage = recipeService.getAllByUser(
                 new UserId(currentUser.id().value()),
-                new PageRequest(page, size, searchQuery)
+                new RecipePageRequestImpl(page, size, searchQuery, new HashSet<>(tags))
         );
 
         RecipePageDto response = new RecipePageDto();
@@ -115,6 +115,8 @@ public class RecipeResource implements RecipesApi  {
 
         return Response.ok(response).build();
     }
+
+
 
 
     @Override

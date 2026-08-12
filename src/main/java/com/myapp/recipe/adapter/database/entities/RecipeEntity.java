@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +19,7 @@ public class RecipeEntity {
     private Duration duration;
     private List<RecipeIngredientEntity> recipeIngredients;
     private List<CookingInstructionEntity> cookingInstructions;
+    private Set<String> tags;
     private String userId;
 
 }

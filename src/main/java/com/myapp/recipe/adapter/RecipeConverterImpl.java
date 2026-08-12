@@ -11,6 +11,8 @@ import org.openapitools.model.RecipeIngredientDto;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipeConverterImpl implements RecipeConverter {
@@ -24,8 +26,13 @@ public class RecipeConverterImpl implements RecipeConverter {
                 createCookingInstructionsFromDtos(recipeDto.getCookingInstructions()),
                 recipeDto.getPortions(),
                 Duration.parse(recipeDto.getDuration()),
+                createFrom(recipeDto.getTags()),
                 null
         );
+    }
+
+    private static Set<Tag> createFrom(Collection<String> tags) {
+        return tags.stream().map(Tag::new).collect(Collectors.toSet());
     }
 
     public Recipe dtoToDomain(RecipeDto recipeDto, UserId userId) {
@@ -36,6 +43,7 @@ public class RecipeConverterImpl implements RecipeConverter {
                 createCookingInstructionsFromDtos(recipeDto.getCookingInstructions()),
                 recipeDto.getPortions(),
                 Duration.parse(recipeDto.getDuration()),
+                createFrom(recipeDto.getTags()),
                 userId
         );
     }
@@ -66,6 +74,7 @@ public class RecipeConverterImpl implements RecipeConverter {
                 createCookingInstructionsFromEntities(recipeEntity.getCookingInstructions()),
                 recipeEntity.getPortions(),
                 recipeEntity.getDuration(),
+                createFrom(recipeEntity.getTags()),
                 new UserId(recipeEntity.getUserId())
         );
     }
@@ -104,7 +113,8 @@ public class RecipeConverterImpl implements RecipeConverter {
                 createRecipeIngredientDtos(recipe.recipeIngredients()),
                 createCookingInstructionDtos(recipe.cookingInstructions()),
                 recipe.portions(),
-                recipe.duration().toString()
+                recipe.duration().toString(),
+                recipe.tags().stream().map(Tag::value).toList()
         );
     }
 
@@ -184,4 +194,6 @@ public class RecipeConverterImpl implements RecipeConverter {
             return e;
         }).toList();
     }
+
+
 }
