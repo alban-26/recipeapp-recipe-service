@@ -8,10 +8,7 @@ import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.database.RecipePageRequest;
 import com.myapp.recipe.adapter.restapi.FileService;
-import com.myapp.recipe.domain.model.Ingredient;
-import com.myapp.recipe.domain.model.Recipe;
-import com.myapp.recipe.domain.model.RecipeId;
-import com.myapp.recipe.domain.model.RecipeInfo;
+import com.myapp.recipe.domain.model.*;
 import com.myapp.recipe.domain.service.MessagePublisher;
 import com.myapp.recipe.domain.service.RecipeRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,6 +18,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PathParam;
 import lombok.extern.slf4j.Slf4j;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @ApplicationScoped
 @Slf4j
@@ -53,6 +52,10 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         this.recipeRepository = recipeRepository;
         this.fileService = fileService;
         this.messagePublisher = messagePublisher;
+    }
+
+    public Set<Tag> getTags(UserId userId) {
+        return recipeRepository.fetchTags(userId);
     }
 
     public Recipe createRecipe(Recipe recipe) {

@@ -48,6 +48,8 @@ public class RecipeResource implements RecipesApi  {
     @Inject
     JsonWebToken jwt;
 
+
+
     @Inject
     public RecipeResource(RecipeService recipeService, RecipeConverter recipeConverter) {
         this.recipeService = recipeService;
@@ -116,7 +118,11 @@ public class RecipeResource implements RecipesApi  {
         return Response.ok(response).build();
     }
 
-
+    @Override
+    public Response getUsedTags() {
+        User currentUser = User.fromToken(jwt);
+        return Response.ok(recipeService.getTags(currentUser.id()).stream().map(Tag::value)).build();
+    }
 
 
     @Override

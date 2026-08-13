@@ -12,10 +12,8 @@ import com.myapp.recipe.domain.service.RecipeRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipeRepositoryImpl implements RecipeRepository {
@@ -52,6 +50,12 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     public List<Ingredient> fetchIngredients(UserId userId) {
         List<IngredientEntity> ingredientEntities = recipeMapper.selectIngredientsByUserId(userId.value());
         return ingredientEntities.stream().map(ingredientEntity -> new Ingredient(ingredientEntity.getName(), ProductCategory.valueOf(ingredientEntity.getCategory()))).toList();
+    }
+
+    @Override
+    public Set<Tag> fetchTags(UserId userId) {
+        List<String> tags = recipeMapper.selectTagsByUser(userId.value());
+        return tags.stream().map(Tag::new).collect(Collectors.toSet());
     }
 
 
@@ -176,9 +180,9 @@ public class RecipeRepositoryImpl implements RecipeRepository {
                 recipeMapper.selectRecipesByUserPaged(
                         userId.value(),
                         recipePageRequest.size(),
-                        recipePageRequest.offset(), recipePageRequest.searchQuery(), recipePageRequest.getTags());
+                        recipePageRequest.offset(), recipePageRequest.searchQuery(), recipePageRequest.getTags().stream().toList(), recipePageRequest.getTags().size());
 
-        long total = recipeMapper.countRecipesByUser(userId.value(), recipePageRequest.searchQuery(), recipePageRequest.getTags());
+        long total = recipeMapper.countRecipesByUser(userId.value(), recipePageRequest.searchQuery(), recipePageRequest.getTags().stream().toList(), recipePageRequest.getTags().size());
 
         int totalPages = (int) Math.ceil((double) total / recipePageRequest.size());
         boolean last = recipePageRequest.page() >= totalPages - 1;

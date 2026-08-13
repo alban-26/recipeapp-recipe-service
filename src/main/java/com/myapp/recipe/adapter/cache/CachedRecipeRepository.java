@@ -7,15 +7,22 @@ import com.myapp.recipe.adapter.database.RecipePageRequest;
 import com.myapp.recipe.domain.model.Ingredient;
 import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
+import com.myapp.recipe.domain.model.Tag;
 import com.myapp.recipe.domain.service.RecipeRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class CachedRecipeRepository implements RecipeRepository {
     @Override
     public List<Ingredient> fetchIngredients(UserId userId) {
         return List.of();
+    }
+
+    @Override
+    public Set<Tag> fetchTags(UserId userId) {
+        return Set.of();
     }
 
     @Override

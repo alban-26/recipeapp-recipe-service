@@ -42,6 +42,10 @@ public interface RecipeMapper {
     @Select("SELECT id, name, category FROM ingredient WHERE id = #{id}")
     IngredientEntity selectIngredientById(Long id);
 
+    @Select("select distinct tag.name from tag join recipe_tag on tag.id = recipe_tag.tag_id join recipe on recipe_tag.recipe_id = recipe.id " +
+            "where recipe.user_id = #{userId}")
+    List<String> selectTagsByUser(String userId);
+
     @Select("SELECT id, name, category FROM ingredient")
     List<IngredientEntity> selectAllIngredients();
 
@@ -154,7 +158,7 @@ public interface RecipeMapper {
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectCookingInstructions")),
-            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+            @Result(property = "tags", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectTagsByRecipeId"))
     })
     RecipeEntity selectRecipe(Long recipeId);
@@ -170,7 +174,7 @@ public interface RecipeMapper {
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectCookingInstructions")),
-            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+            @Result(property = "tags", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipes();
@@ -186,40 +190,40 @@ public interface RecipeMapper {
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectCookingInstructions")),
-            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+            @Result(property = "tags", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipesByUser(String userId);
 
     @Select("""
-    <script>
-    SELECT r.id AS recipeId,
-           r.name,
-           r.portions,
-           r.duration,
-           r.user_id
-    FROM recipe r
-    WHERE r.user_id = #{userId}
-    <if test="searchQuery != null and searchQuery != ''">
-        AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
-    </if>
-    <if test="tags != null and tags.size() > 0">
-        AND (
-            SELECT COUNT(DISTINCT t.name)
-            FROM recipe_tag rt
-            JOIN tag t ON t.id = rt.tag_id
-            WHERE rt.recipe_id = r.id
-              AND t.name IN
-              <foreach item="tag" collection="tags" open="(" separator="," close=")">
-                  #{tag}
-              </foreach>
-        ) = #{tags.size()}
-    </if>
-    ORDER BY r.name ASC
-    LIMIT #{limit}
-    OFFSET #{offset}
-    </script>
-    """)
+            <script>
+            SELECT r.id AS recipeId,
+                   r.name,
+                   r.portions,
+                   r.duration,
+                   r.user_id
+            FROM recipe r
+            WHERE r.user_id = #{userId}
+            <if test="searchQuery != null and searchQuery != ''">
+                AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
+            </if>
+                    <if test="tags != null and tags.size() > 0">
+                        AND (
+                            SELECT COUNT(DISTINCT t.name)
+                            FROM recipe_tag rt
+                            JOIN tag t ON t.id = rt.tag_id
+                            WHERE rt.recipe_id = r.id
+                              AND t.name IN
+                              <foreach item="tag" collection="tags" open="(" separator="," close=")">
+                                  #{tag}
+                              </foreach>
+                        ) = #{tagCount}
+                    </if>
+            ORDER BY r.name ASC
+            LIMIT #{limit}
+            OFFSET #{offset}
+            </script>
+            """)
     @Results({
             @Result(property = "id", column = "recipeId"),
             @Result(property = "name", column = "name"),
@@ -230,7 +234,7 @@ public interface RecipeMapper {
                     many = @Many(select = "selectRecipeIngredients")),
             @Result(property = "cookingInstructions", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectCookingInstructions")),
-            @Result(property = "tags", javaType = java.util.Set.class, column = "recipeId",
+            @Result(property = "tags", javaType = List.class, column = "recipeId",
                     many = @Many(select = "selectTagsByRecipeId"))
     })
     List<RecipeEntity> selectRecipesByUserPaged(
@@ -238,35 +242,38 @@ public interface RecipeMapper {
             @Param("limit") int limit,
             @Param("offset") int offset,
             @Param("searchQuery") String searchQuery,
-            @Param("tags") Set<String> tags);
+            @Param("tags") List<String> tags,
+            @Param("tagCount") int tagCount
+    );
 
 
     @Select("""
-    <script>
-    SELECT COUNT(*)
-    FROM recipe r
-    WHERE r.user_id = #{userId}
-    <if test="searchQuery != null and searchQuery != ''">
-        AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
-    </if>
-    <if test="tags != null and tags.size() > 0">
-        AND (
-            SELECT COUNT(DISTINCT t.name)
-            FROM recipe_tag rt
-            JOIN tag t ON t.id = rt.tag_id
-            WHERE rt.recipe_id = r.id
-              AND t.name IN
-              <foreach item="tag" collection="tags" open="(" separator="," close=")">
-                  #{tag}
-              </foreach>
-        ) = #{tags.size()}
-    </if>
-    </script>
-    """)
+        <script>
+        SELECT COUNT(*)
+        FROM recipe r
+        WHERE r.user_id = #{userId}
+        <if test="searchQuery != null and searchQuery != ''">
+            AND r.name ILIKE CONCAT('%', #{searchQuery}, '%')
+        </if>
+        <if test="tags != null and tags.size() > 0">
+            AND (
+                SELECT COUNT(DISTINCT t.name)
+                FROM recipe_tag rt
+                JOIN tag t ON t.id = rt.tag_id
+                WHERE rt.recipe_id = r.id
+                  AND t.name IN
+                  <foreach item="tag" collection="tags" open="(" separator="," close=")">
+                      #{tag}
+                  </foreach>
+            ) = #{tagCount}
+        </if>
+        </script>
+        """)
     long countRecipesByUser(
             @Param("userId") String userId,
             @Param("searchQuery") String searchQuery,
-            @Param("tags") Set<String> tags);
+            @Param("tags") List<String> tags,
+            @Param("tagCount") int tagCount);
 
 
     // ================================

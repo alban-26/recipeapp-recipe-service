@@ -197,7 +197,23 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/IngredientDto'
-
+  /recipes/tags:
+    get:
+      summary: Get all tags used by the current user
+      description: Liefert die vom eingeloggten User bereits verwendeten Tags (distinct, lowercase, alphabetisch sortiert) – z. B. für die Filter-Auswahl.
+      operationId: getUsedTags
+      security:
+        - oidcAuth: [ "user" ]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: [ "frühstück", "schnell", "vegetarisch" ]
 components:
   schemas:
     RecipeDto:
