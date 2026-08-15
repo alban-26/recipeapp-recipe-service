@@ -61,111 +61,100 @@ public class RecipeRepositoryImpl implements RecipeRepository {
 
     @Override
     public Recipe save(Recipe recipe) {
-
         RecipeEntity entity = recipeConverter.domainToEntity(recipe);
-
         recipeMapper.insertRecipe(entity);
 
-        for (RecipeTagEntity recipeTagEntity : entity.getTags()) {
-            recipeTagEntity.setRecipeId(entity.getId());
-            TagEntity tagEntity = new TagEntity(0L, recipeTagEntity.getTagName());
-            recipeMapper.insertTag(tagEntity);
-            if (tagEntity.getId() != 0) {
-                recipeTagEntity.setTagId(tagEntity.getId());
-            } else {
-                recipeTagEntity.setTagId(recipeMapper.findTagIdByName(recipeTagEntity.getTagName()));
-            }
-            recipeMapper.insertRecipeTag(recipeTagEntity);
-
-        }
-
-        for (RecipeIngredientEntity ingredient : entity.getRecipeIngredients()) {
-            ingredient.setRecipeId(entity.getId());
-
-            IngredientEntity ingredientEntity = new IngredientEntity(0L, ingredient.getIngredientName(), ingredient.getIngredientCategory());
-            recipeMapper.insertIngredient(
-                    ingredientEntity);
-
-
-            if (ingredientEntity.getId() != 0) {
-                ingredient.setIngredientId(ingredientEntity.getId());
-            } else {
-                ingredient.setIngredientId(recipeMapper.findByName(ingredient.getIngredientName()));
-            }
-
-            recipeMapper.insertRecipeIngredient(ingredient);
-        }
-
-        for (CookingInstructionEntity instructionEntity : entity.getCookingInstructions()) {
-            instructionEntity.setRecipeId(entity.getId());
-            recipeMapper.insertCookingInstruction(instructionEntity);
-
-            for (InstructionIngredientEntity instructionIngredient : instructionEntity.getInstructionIngredients()) {
-                instructionIngredient.setCookingInstructionId(instructionEntity.getId());
-
-                Long recipeIngredientId = entity.getRecipeIngredients().stream()
-                        .filter(ri -> ri.getIngredientName().equals(instructionIngredient.getIngredientName())
-                                && ri.getUnit().equals(instructionIngredient.getUnit()))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException(
-                                "Cannot find recipeIngredientId for " + instructionIngredient.getIngredientName()))
-                        .getId();
-
-                instructionIngredient.setRecipeIngredientId(recipeIngredientId);
-
-                recipeMapper.insertInstructionIngredient(instructionIngredient);
-            }
-        }
+        saveTags(entity);
+        saveIngredients(entity);
+        saveCookingInstructions(entity);
 
         return recipeConverter.entityToDomain(entity);
     }
 
-
     @Override
     public Recipe update(Recipe recipe) {
         RecipeEntity entity = recipeConverter.domainToEntity(recipe);
-
         recipeMapper.updateRecipe(entity);
 
-        recipeMapper.deleteInstructionIngredientsByRecipeId(entity.getId());
-        recipeMapper.deleteCookingInstructionsByRecipeId(entity.getId());
-        recipeMapper.deleteRecipeIngredientsByRecipeId(entity.getId());
+        deleteRelatedData(entity.getId());
 
-
-        for (RecipeIngredientEntity ingredient : entity.getRecipeIngredients()) {
-            ingredient.setRecipeId(entity.getId());
-            IngredientEntity ingredientEntity = new IngredientEntity(0L, ingredient.getIngredientName(), ingredient.getIngredientCategory());
-            recipeMapper.insertIngredient(
-                    ingredientEntity);
-
-            if (ingredientEntity.getId() != 0) {
-                ingredient.setIngredientId(ingredientEntity.getId());
-            } else {
-                ingredient.setIngredientId(recipeMapper.findByName(ingredient.getIngredientName()));
-            }
-            recipeMapper.insertRecipeIngredient(ingredient);
-        }
-
-        for (CookingInstructionEntity instructionEntity : entity.getCookingInstructions()) {
-            instructionEntity.setRecipeId(entity.getId());
-            recipeMapper.insertCookingInstruction(instructionEntity);
-
-            for (InstructionIngredientEntity instructionIngredient : instructionEntity.getInstructionIngredients()) {
-                instructionIngredient.setCookingInstructionId(instructionEntity.getId());
-                Long recipeIngredientId = entity.getRecipeIngredients().stream()
-                        .filter(ri -> ri.getIngredientName().equals(instructionIngredient.getIngredientName())
-                                && ri.getUnit().equals(instructionIngredient.getUnit()))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException(
-                                "Cannot find recipeIngredientId for " + instructionIngredient.getIngredientName()))
-                        .getId();
-
-                instructionIngredient.setRecipeIngredientId(recipeIngredientId);
-                recipeMapper.insertInstructionIngredient(instructionIngredient);
-            }
-        }
+        saveTags(entity);
+        saveIngredients(entity);
+        saveCookingInstructions(entity);
 
         return recipeConverter.entityToDomain(entity);
+    }
+
+    private void deleteRelatedData(Long recipeId) {
+        recipeMapper.deleteInstructionIngredientsByRecipeId(recipeId);
+        recipeMapper.deleteCookingInstructionsByRecipeId(recipeId);
+        recipeMapper.deleteRecipeIngredientsByRecipeId(recipeId);
+        recipeMapper.deleteRecipeTagsByRecipeId(recipeId);
+    }
+
+
+    private void saveTags(RecipeEntity entity) {
+        for (RecipeTagEntity recipeTag : entity.getTags()) {
+            recipeTag.setRecipeId(entity.getId());
+            recipeTag.setTagId(resolveTagId(recipeTag.getTagName()));
+            recipeMapper.insertRecipeTag(recipeTag);
+        }
+    }
+
+    private Long resolveTagId(String tagName) {
+        TagEntity tag = new TagEntity(0L, tagName);
+        recipeMapper.insertTag(tag);
+        return tag.getId() != 0
+                ? tag.getId()
+                : recipeMapper.findTagIdByName(tagName);
+    }
+
+
+    private void saveIngredients(RecipeEntity entity) {
+        for (RecipeIngredientEntity ingredient : entity.getRecipeIngredients()) {
+            ingredient.setRecipeId(entity.getId());
+            ingredient.setIngredientId(resolveIngredientId(ingredient));
+            recipeMapper.insertRecipeIngredient(ingredient);
+        }
+    }
+
+    private Long resolveIngredientId(RecipeIngredientEntity ingredient) {
+        IngredientEntity ingredientEntity = new IngredientEntity(
+                0L, ingredient.getIngredientName(), ingredient.getIngredientCategory());
+        recipeMapper.insertIngredient(ingredientEntity);
+        return ingredientEntity.getId() != 0
+                ? ingredientEntity.getId()
+                : recipeMapper.findByName(ingredient.getIngredientName());
+    }
+
+
+    private void saveCookingInstructions(RecipeEntity entity) {
+        for (CookingInstructionEntity instruction : entity.getCookingInstructions()) {
+            instruction.setRecipeId(entity.getId());
+            recipeMapper.insertCookingInstruction(instruction);
+            saveInstructionIngredients(instruction, entity.getRecipeIngredients());
+        }
+    }
+
+    private void saveInstructionIngredients(CookingInstructionEntity instruction,
+                                            List<RecipeIngredientEntity> recipeIngredients) {
+        for (InstructionIngredientEntity instructionIngredient : instruction.getInstructionIngredients()) {
+            instructionIngredient.setCookingInstructionId(instruction.getId());
+            instructionIngredient.setRecipeIngredientId(
+                    findRecipeIngredientId(instructionIngredient, recipeIngredients));
+            recipeMapper.insertInstructionIngredient(instructionIngredient);
+        }
+    }
+
+    private Long findRecipeIngredientId(InstructionIngredientEntity instructionIngredient,
+                                        List<RecipeIngredientEntity> recipeIngredients) {
+        return recipeIngredients.stream()
+                .filter(ri -> ri.getIngredientName().equals(instructionIngredient.getIngredientName())
+                        && ri.getUnit().equals(instructionIngredient.getUnit()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot find recipeIngredientId for " + instructionIngredient.getIngredientName()))
+                .getId();
     }
 
 

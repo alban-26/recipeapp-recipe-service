@@ -292,10 +292,13 @@ public interface RecipeMapper {
             "VALUES (#{recipeId}, #{tagId}) ON CONFLICT DO NOTHING")
     void insertRecipeTag(RecipeTagEntity recipeTagEntity);
 
-    @Select("SELECT t.name FROM recipe_tag rt " +
+    @Select("SELECT t.name AS tagName FROM recipe_tag rt " +
             "JOIN tag t ON t.id = rt.tag_id " +
             "WHERE rt.recipe_id = #{recipeId}")
-    List<RecipeEntity> selectTagsByRecipeId(Long recipeId);
+    @Results({
+            @Result(property = "tagName", column = "tagName")
+    })
+    List<RecipeTagEntity> selectTagsByRecipeId(Long recipeId);
 
     @Delete("DELETE FROM recipe_tag WHERE recipe_id = #{recipeId}")
     void deleteRecipeTagsByRecipeId(Long recipeId);
