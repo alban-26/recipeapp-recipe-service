@@ -35,6 +35,10 @@ public class RecipeConverterImpl implements RecipeConverter {
         return tags.stream().map(Tag::new).collect(Collectors.toSet());
     }
 
+    private static Set<Tag> createTagsFromEntities(Collection<RecipeTagEntity> tags) {
+        return tags.stream().map(RecipeTagEntity::getTagName).map(Tag::new).collect(Collectors.toSet());
+    }
+
     public Recipe dtoToDomain(RecipeDto recipeDto, UserId userId) {
         return new Recipe(
                 new RecipeId(recipeDto.getId()),
@@ -74,7 +78,7 @@ public class RecipeConverterImpl implements RecipeConverter {
                 createCookingInstructionsFromEntities(recipeEntity.getCookingInstructions()),
                 recipeEntity.getPortions(),
                 recipeEntity.getDuration(),
-                createFrom(recipeEntity.getTags()),
+                createTagsFromEntities(recipeEntity.getTags()),
                 new UserId(recipeEntity.getUserId())
         );
     }
@@ -147,6 +151,7 @@ public class RecipeConverterImpl implements RecipeConverter {
         entity.setRecipeIngredients(createRecipeIngredientEntities(recipe.recipeIngredients(), recipe.id()));
         entity.setCookingInstructions(createCookingInstructionEntities(recipe.cookingInstructions(), recipe.id()));
         entity.setUserId(recipe.userId().value());
+        entity.setTags(recipe.tags().stream().map(item -> new RecipeTagEntity(0L, recipe.id().id(), 0L, item.value())).toList());
         return entity;
     }
 

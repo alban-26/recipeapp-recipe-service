@@ -87,6 +87,9 @@ public interface RecipeMapper {
     @Select("SELECT id FROM ingredient WHERE name = #{name}")
     Long findByName(@Param("name") String name);
 
+    @Select("SELECT id FROM tag WHERE name = #{name}")
+    Long findTagByName(@Param("name") String name);
+
 
     // ================================
     // Cooking Instructions
@@ -280,19 +283,19 @@ public interface RecipeMapper {
     // Tags
     // ================================
     @Insert("INSERT INTO tag (name) VALUES (#{name}) ON CONFLICT (name) DO NOTHING")
-    void insertTag(@Param("name") String name);
+    void insertTag(TagEntity tag);
 
     @Select("SELECT id FROM tag WHERE name = #{name}")
     Long findTagIdByName(@Param("name") String name);
 
     @Insert("INSERT INTO recipe_tag (recipe_id, tag_id) " +
             "VALUES (#{recipeId}, #{tagId}) ON CONFLICT DO NOTHING")
-    void insertRecipeTag(@Param("recipeId") Long recipeId, @Param("tagId") Long tagId);
+    void insertRecipeTag(RecipeTagEntity recipeTagEntity);
 
     @Select("SELECT t.name FROM recipe_tag rt " +
             "JOIN tag t ON t.id = rt.tag_id " +
             "WHERE rt.recipe_id = #{recipeId}")
-    List<String> selectTagsByRecipeId(Long recipeId);
+    List<RecipeEntity> selectTagsByRecipeId(Long recipeId);
 
     @Delete("DELETE FROM recipe_tag WHERE recipe_id = #{recipeId}")
     void deleteRecipeTagsByRecipeId(Long recipeId);

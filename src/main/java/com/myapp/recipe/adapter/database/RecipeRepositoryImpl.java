@@ -66,6 +66,19 @@ public class RecipeRepositoryImpl implements RecipeRepository {
 
         recipeMapper.insertRecipe(entity);
 
+        for (RecipeTagEntity recipeTagEntity : entity.getTags()) {
+            recipeTagEntity.setRecipeId(entity.getId());
+            TagEntity tagEntity = new TagEntity(0L, recipeTagEntity.getTagName());
+            recipeMapper.insertTag(tagEntity);
+            if (tagEntity.getId() != 0) {
+                recipeTagEntity.setTagId(tagEntity.getId());
+            } else {
+                recipeTagEntity.setTagId(recipeMapper.findTagIdByName(recipeTagEntity.getTagName()));
+            }
+            recipeMapper.insertRecipeTag(recipeTagEntity);
+
+        }
+
         for (RecipeIngredientEntity ingredient : entity.getRecipeIngredients()) {
             ingredient.setRecipeId(entity.getId());
 
@@ -162,6 +175,7 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     }
 
 
+/*
     private void saveTags(Long recipeId, Set<String> tags) {
         recipeMapper.deleteRecipeTagsByRecipeId(recipeId);   // für Update: alte Links weg
         if (tags == null) return;
@@ -172,6 +186,7 @@ public class RecipeRepositoryImpl implements RecipeRepository {
             recipeMapper.insertRecipeTag(recipeId, tagId);
         }
     }
+*/
 
 
     @Override

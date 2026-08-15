@@ -19,7 +19,7 @@ public class RecipeEntity {
     private Duration duration;
     private List<RecipeIngredientEntity> recipeIngredients;
     private List<CookingInstructionEntity> cookingInstructions;
-    private List<String> tags;
+    private List<RecipeTagEntity> tags;
     private String userId;
 
 }
