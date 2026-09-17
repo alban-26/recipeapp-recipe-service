@@ -2,7 +2,6 @@ package com.myapp.recipe.application;
 
 
 import com.my.common.api.AbstractAccess;
-import com.my.common.api.Identifiable;
 import com.my.common.api.UserId;
 import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
@@ -13,6 +12,7 @@ import com.myapp.recipe.domain.service.MessagePublisher;
 import com.myapp.recipe.domain.service.RecipeRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PathParam;
@@ -58,16 +58,49 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         return recipeRepository.fetchTags(userId);
     }
 
+    @Transactional
     public Recipe createRecipe(Recipe recipe) {
+        if (recipeRepository.existsByNameAndUserId(recipe.name(), recipe.userId())) {
+            throw new RecipeAlreadyExistsException(recipe.name());
+        }
+
         Recipe savedRecipe = super.save(recipe);
         log.debug("Recipe saved with ID: {}", savedRecipe.id());
 
+        publishRecipeInfo(savedRecipe);
+        return savedRecipe;
+    }
+
+    @Transactional
+    public Recipe updateRecipe(Recipe recipe) {
+        Recipe existing = recipeRepository.findById(recipe.id())
+                .orElseThrow(() -> new NotFoundException(
+                        "Recipe with ID " + recipe.id().id() + " does not exist"));
+
+        if (!existing.userId().equals(recipe.userId())) {
+            throw new NotFoundException(
+                    "Recipe with ID " + recipe.id().id() + " does not exist");
+        }
+
+        if (!existing.name().equalsIgnoreCase(recipe.name())
+                && recipeRepository.existsByNameAndUserId(recipe.name(), recipe.userId())) {
+            throw new RecipeAlreadyExistsException(recipe.name());
+        }
+
+        Recipe updated = recipeRepository.update(recipe);
+        log.debug("Recipe updated with ID: {}", updated.id());
+
+        publishRecipeInfo(updated);
+        return updated;
+    }
+
+    private void publishRecipeInfo(Recipe recipe) {
         RecipeInfo info = new RecipeInfo(
                 recipe.id(),
-                savedRecipe.name(),
-                savedRecipe.recipeIngredients(),
-                savedRecipe.portions(),
-                savedRecipe.userId()
+                recipe.name(),
+                recipe.recipeIngredients(),
+                recipe.portions(),
+                recipe.userId()
         );
 
         try {
@@ -76,24 +109,22 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         } catch (Exception e) {
             log.error("Failed to publish recipe with ID {}", info.id(), e);
         }
-
-        return savedRecipe;
     }
 
     public List<Ingredient> getIngredients(UserId userId) {
         return recipeRepository.fetchIngredients(userId);
     }
 
+    @Transactional
     public void deleteById(RecipeId id) {
         Optional<Recipe> recipeOpt = this.getById(id);
         if (recipeOpt.isEmpty()) {
-            throw new NotFoundException("Attempted to delete non-existent recipe with ID {}");
+            throw new NotFoundException("Recipe with ID " + id.id() + " does not exist");
         }
         recipeRepository.deleteById(recipeOpt.get().id());
         Path imageDir = resolvePathByRecipe(recipeOpt.get().id().id());
         fileService.deleteImage(imageDir);
         log.info("Deleted recipe with ID {}", id);
-
     }
 
     public void saveRecipeImage(@PathParam("id") Long id, @FormParam("image") InputStream imageInputStream) {

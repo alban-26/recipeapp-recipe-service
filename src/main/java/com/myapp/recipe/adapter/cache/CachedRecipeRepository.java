@@ -26,6 +26,11 @@ public class CachedRecipeRepository implements RecipeRepository {
     }
 
     @Override
+    public boolean existsByNameAndUserId(String name, UserId userId) {
+        return false;
+    }
+
+    @Override
     public Optional<Recipe> findById(RecipeId recipeId) {
         return Optional.empty();
     }

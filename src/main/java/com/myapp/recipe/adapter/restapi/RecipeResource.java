@@ -2,17 +2,14 @@ package com.myapp.recipe.adapter.restapi;
 
 
 import com.my.common.api.UserId;
-import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.ErrorResponse;
 import com.myapp.recipe.adapter.RecipeConverter;
-import com.myapp.recipe.adapter.database.RecipePageRequest;
 import com.myapp.recipe.adapter.database.RecipePageRequestImpl;
 import com.myapp.recipe.application.RecipeService;
 import com.myapp.recipe.domain.model.*;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.common.annotation.Blocking;
-import io.smallrye.common.annotation.NonBlocking;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -30,12 +27,10 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Path("/recipes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NonBlocking
 @Slf4j
 public class RecipeResource implements RecipesApi  {
 
@@ -87,7 +82,8 @@ public class RecipeResource implements RecipesApi  {
         if (recipeOpt.isPresent()) {
             return Response.ok(recipeOpt.get()).build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Recipe not found")).build();
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ErrorResponse.of("RECIPE_NOT_FOUND", "Recipe not found")).build();
         }
     }
 
@@ -121,7 +117,7 @@ public class RecipeResource implements RecipesApi  {
     @Override
     public Response getUsedTags() {
         User currentUser = User.fromToken(jwt);
-        return Response.ok(recipeService.getTags(currentUser.id()).stream().map(Tag::value)).build();
+        return Response.ok(recipeService.getTags(currentUser.id()).stream().map(Tag::value).toList()).build();
     }
 
 
@@ -156,7 +152,8 @@ public class RecipeResource implements RecipesApi  {
     public Response downloadRecipeImage(@PathParam("id") Long id) {
         File imageFile = recipeService.loadRecipeImage(id);
         if (imageFile == null) {
-            return Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Recipe image not found")).build();
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ErrorResponse.of("RECIPE_IMAGE_NOT_FOUND", "Recipe image not found")).build();
         }
 
         return Response.ok(imageFile).header("Content-Disposition", "attachment; filename=\"" + imageFile.getName() + "\"").build();

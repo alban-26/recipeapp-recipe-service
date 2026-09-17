@@ -30,8 +30,7 @@ CREATE TABLE IF NOT EXISTS recipe_ingredient
     recipe_id BIGINT NOT NULL REFERENCES recipe(id) ON DELETE CASCADE,
     ingredient_id BIGINT NOT NULL REFERENCES ingredient(id) ON DELETE CASCADE,
     total_quantity DOUBLE PRECISION NOT NULL,
-    unit VARCHAR(50) NOT NULL,
-    UNIQUE (recipe_id, ingredient_id) -- avoid duplicates
+    unit VARCHAR(50) NOT NULL
 );
 
 -- =========================

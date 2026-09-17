@@ -3,7 +3,6 @@ package com.myapp.recipe.adapter.database;
 
 
 import com.my.common.api.UserId;
-import com.my.common.api.pagination.PageRequest;
 import com.my.common.api.pagination.PageResult;
 import com.myapp.recipe.adapter.RecipeConverter;
 import com.myapp.recipe.adapter.database.entities.*;
@@ -161,6 +160,11 @@ public class RecipeRepositoryImpl implements RecipeRepository {
     @Override
     public void deleteById(RecipeId id) {
         recipeMapper.deleteRecipe(id.id());
+    }
+
+    @Override
+    public boolean existsByNameAndUserId(String name, UserId userId) {
+        return recipeMapper.existsByNameAndUserId(name, userId.value());
     }
 
 

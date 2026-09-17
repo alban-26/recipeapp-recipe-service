@@ -27,6 +27,9 @@ public interface RecipeMapper {
     void deleteRecipe(Long id);
 
 
+    @Select("SELECT EXISTS(SELECT 1 FROM recipe WHERE LOWER(name) = LOWER(#{name}) AND user_id = #{userId})")
+    boolean existsByNameAndUserId(@Param("name") String name, @Param("userId") String userId);
+
     // ================================
     // Ingredient dictionary
     // ================================

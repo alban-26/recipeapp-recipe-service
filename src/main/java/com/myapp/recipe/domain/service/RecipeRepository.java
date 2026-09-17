@@ -10,8 +10,6 @@ import com.myapp.recipe.domain.model.Recipe;
 import com.myapp.recipe.domain.model.RecipeId;
 import com.myapp.recipe.domain.model.Tag;
 
-
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -21,5 +19,6 @@ public interface RecipeRepository extends Repository<Recipe, RecipeId>, PagedRep
 
     Set<Tag> fetchTags(UserId userId);
 
+    boolean existsByNameAndUserId(String name, UserId userId);
 }
 
