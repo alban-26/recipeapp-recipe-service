@@ -96,6 +96,7 @@ class RecipeResourceTest {
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testGetRecipeById_found() {
+        Mockito.when(jwt.getSubject()).thenReturn("user1");
         Recipe recipe = new Recipe(new RecipeId(1L), "Cake", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user1"));
         Mockito.when(recipeService.getById(any())).thenReturn(Optional.of(recipe));
 
@@ -105,6 +106,22 @@ class RecipeResourceTest {
                 .get("/recipes/1")
                 .then()
                 .statusCode(200);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = {"user"})
+    void testGetRecipeById_foreignRecipe_notFound() {
+        Mockito.when(jwt.getSubject()).thenReturn("user1");
+        Recipe foreign = new Recipe(new RecipeId(1L), "Cake", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user2"));
+        Mockito.when(recipeService.getById(any())).thenReturn(Optional.of(foreign));
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/recipes/1")
+                .then()
+                .statusCode(404)
+                .body("message", equalTo("Recipe not found"));
     }
 
     @Test
@@ -144,11 +161,60 @@ class RecipeResourceTest {
     @Test
     @TestSecurity(user = "user1", roles = {"user"})
     void testDeleteRecipe_returnsOk() {
+        Mockito.when(jwt.getSubject()).thenReturn("user1");
+        Recipe recipe = new Recipe(new RecipeId(5L), "Cake", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user1"));
+        Mockito.when(recipeService.getById(new RecipeId(5L))).thenReturn(Optional.of(recipe));
+
         given()
                 .when()
                 .delete("/recipes/5")
                 .then()
                 .statusCode(200);
+
+        Mockito.verify(recipeService).deleteById(new RecipeId(5L));
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = {"user"})
+    void testDeleteRecipe_foreignRecipe_notFound() {
+        Mockito.when(jwt.getSubject()).thenReturn("user1");
+        Recipe foreign = new Recipe(new RecipeId(5L), "Cake", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user2"));
+        Mockito.when(recipeService.getById(new RecipeId(5L))).thenReturn(Optional.of(foreign));
+
+        given()
+                .when()
+                .delete("/recipes/5")
+                .then()
+                .statusCode(404);
+
+        Mockito.verify(recipeService, Mockito.never()).deleteById(any());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = {"user"})
+    void testUpdateRecipe_updatesInsteadOfCreating() {
+        Mockito.when(jwt.getSubject()).thenReturn("user1");
+        RecipeDto dto = new RecipeDto();
+        dto.setId(7L);
+        dto.setName("Soup");
+        Recipe recipe = new Recipe(new RecipeId(7L), "Soup", null, null, 0, null, new HashSet<>(List.of(new Tag("leicht"))), new UserId("user1"));
+
+        Mockito.when(recipeConverter.dtoToDomain(any())).thenReturn(recipe);
+        Mockito.when(recipeService.updateRecipe(any())).thenReturn(recipe);
+        Mockito.when(recipeConverter.domainToDto(recipe)).thenReturn(dto);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(dto)
+                .when()
+                .put("/recipes")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(7))
+                .body("name", equalTo("Soup"));
+
+        Mockito.verify(recipeService).updateRecipe(recipe);
+        Mockito.verify(recipeService, Mockito.never()).createRecipe(any());
     }
 
 }

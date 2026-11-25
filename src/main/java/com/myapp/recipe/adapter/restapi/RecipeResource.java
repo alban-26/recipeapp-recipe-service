@@ -56,7 +56,11 @@ public class RecipeResource implements RecipesApi  {
 
         User currentUser = User.fromToken(jwt);
         log.info("User {} is creating recipe {}", currentUser.id(), recipeDto.getName());
-        Recipe recipe = recipeConverter.dtoToDomain(recipeDto).withUserId(currentUser.id());
+        // Anlegen heisst immer "neu": eine mitgeschickte ID wird ignoriert, sonst
+        // wuerde hier ein bestehendes (auch fremdes) Rezept ueberschrieben.
+        Recipe recipe = recipeConverter.dtoToDomain(recipeDto)
+                .withId(new RecipeId(0))
+                .withUserId(currentUser.id());
         Recipe createdRecipe = recipeService.createRecipe(recipe);
 
 
@@ -69,22 +73,47 @@ public class RecipeResource implements RecipesApi  {
         User currentUser = User.fromToken(jwt);
         log.info("User {} is deleting recipe {}", currentUser.id(), id);
 
-        recipeService.deleteById(new RecipeId(id));
+        RecipeId recipeId = new RecipeId(id);
+        if (findOwnRecipe(recipeId, currentUser).isEmpty()) {
+            return recipeNotFound();
+        }
+
+        recipeService.deleteById(recipeId);
         return Response.ok().build();
     }
 
 
     @Override
     public Response getRecipeById(Integer id) {
-        RecipeId recipeId = new RecipeId(id);
-        Optional<Recipe> recipeOpt = recipeService.getById(recipeId);
+        User currentUser = User.fromToken(jwt);
+        Optional<Recipe> recipeOpt = findOwnRecipe(new RecipeId(id), currentUser);
 
         if (recipeOpt.isPresent()) {
             return Response.ok(recipeOpt.get()).build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(ErrorResponse.of("RECIPE_NOT_FOUND", "Recipe not found")).build();
+            return recipeNotFound();
         }
+    }
+
+    /**
+     * Liefert das Rezept nur, wenn es dem angemeldeten Nutzer gehoert. Ein
+     * fremdes Rezept wird genauso behandelt wie ein nicht vorhandenes, damit
+     * sich ueber die Antwort nicht herausfinden laesst, welche IDs es gibt.
+     */
+    private Optional<Recipe> findOwnRecipe(RecipeId recipeId, User currentUser) {
+        return recipeService.getById(recipeId)
+                .filter(recipe -> isOwner(recipe, currentUser));
+    }
+
+    private static boolean isOwner(Recipe recipe, User currentUser) {
+        String owner = recipe.userId() != null ? recipe.userId().value() : null;
+        String current = currentUser.id() != null ? currentUser.id().value() : null;
+        return owner != null && owner.equals(current);
+    }
+
+    private static Response recipeNotFound() {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(ErrorResponse.of("RECIPE_NOT_FOUND", "Recipe not found")).build();
     }
 
     @Override
@@ -127,7 +156,11 @@ public class RecipeResource implements RecipesApi  {
         log.info("User {} updating recipe {}", currentUser.id(), recipeDto.getId());
 
         Recipe updatedRecipe = recipeConverter.dtoToDomain(recipeDto).withUserId(currentUser.id());
-        Recipe savedRecipe = recipeService.createRecipe(updatedRecipe);
+        // updateRecipe prueft, dass das Rezept existiert und dem Nutzer gehoert,
+        // und meldet einen Namenskonflikt nur, wenn der Name wirklich geaendert
+        // wurde. Vorher lief das ueber createRecipe - jedes Speichern mit
+        // unveraendertem Namen endete deshalb mit 409.
+        Recipe savedRecipe = recipeService.updateRecipe(updatedRecipe);
         RecipeDto recipeDto1 = recipeConverter.domainToDto(savedRecipe);
         return Response.ok(recipeDto1).build();
     }
@@ -140,6 +173,9 @@ public class RecipeResource implements RecipesApi  {
     public Response uploadRecipeImage(@PathParam("id") Long id, @FormParam("image") InputStream imageInputStream) {
         User currentUser = User.fromToken(jwt);
         log.info("User {} is saving recipe image with ID {}", currentUser.id(), id);
+        if (id == null || findOwnRecipe(new RecipeId(id), currentUser).isEmpty()) {
+            return recipeNotFound();
+        }
         recipeService.saveRecipeImage(id, imageInputStream);
 
         return Response.ok().entity("Image uploaded successfully").build();
@@ -150,7 +186,10 @@ public class RecipeResource implements RecipesApi  {
     @Path("/{id}/image")
     @Blocking
     public Response downloadRecipeImage(@PathParam("id") Long id) {
-        File imageFile = recipeService.loadRecipeImage(id);
+        User currentUser = User.fromToken(jwt);
+        // Fremdes Rezept: dieselbe Antwort wie "kein Bild vorhanden".
+        boolean own = id != null && findOwnRecipe(new RecipeId(id), currentUser).isPresent();
+        File imageFile = own ? recipeService.loadRecipeImage(id) : null;
         if (imageFile == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ErrorResponse.of("RECIPE_IMAGE_NOT_FOUND", "Recipe image not found")).build();
