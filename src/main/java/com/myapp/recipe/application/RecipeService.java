@@ -90,18 +90,13 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         Recipe updated = recipeRepository.update(recipe);
         log.debug("Recipe updated with ID: {}", updated.id());
 
-        publishRecipeInfo(updated);
+        // Mit dem bisherigen Namen: nur so erkennt der Essensplan eine Umbenennung.
+        publishRecipeUpdated(updated, existing.name());
         return updated;
     }
 
     private void publishRecipeInfo(Recipe recipe) {
-        RecipeInfo info = new RecipeInfo(
-                recipe.id(),
-                recipe.name(),
-                recipe.recipeIngredients(),
-                recipe.portions(),
-                recipe.userId()
-        );
+        RecipeInfo info = toInfo(recipe);
 
         try {
             messagePublisher.publishRecipeInfo(info);
@@ -109,6 +104,38 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         } catch (Exception e) {
             log.error("Failed to publish recipe with ID {}", info.id(), e);
         }
+    }
+
+    private void publishRecipeUpdated(Recipe recipe, String previousName) {
+        RecipeInfo info = toInfo(recipe);
+
+        try {
+            messagePublisher.publishRecipeUpdated(info, previousName);
+            log.debug("Update of recipe with ID {} published", info.id());
+        } catch (Exception e) {
+            log.error("Failed to publish update of recipe with ID {}", info.id(), e);
+        }
+    }
+
+    private void publishRecipeDeleted(Recipe recipe) {
+        RecipeInfo info = toInfo(recipe);
+
+        try {
+            messagePublisher.publishRecipeDeleted(info);
+            log.debug("Deletion of recipe with ID {} published", info.id());
+        } catch (Exception e) {
+            log.error("Failed to publish deletion of recipe with ID {}", info.id(), e);
+        }
+    }
+
+    private static RecipeInfo toInfo(Recipe recipe) {
+        return new RecipeInfo(
+                recipe.id(),
+                recipe.name(),
+                recipe.recipeIngredients(),
+                recipe.portions(),
+                recipe.userId()
+        );
     }
 
     public List<Ingredient> getIngredients(UserId userId) {
@@ -125,6 +152,9 @@ public class RecipeService extends AbstractAccess<RecipeRepository, Recipe, Reci
         Path imageDir = resolvePathByRecipe(recipeOpt.get().id().id());
         fileService.deleteImage(imageDir);
         log.info("Deleted recipe with ID {}", id);
+
+        // Bisher erfuhr der Essensplan nichts vom Loeschen; das Rezept blieb dort waehlbar.
+        publishRecipeDeleted(recipeOpt.get());
     }
 
     public void saveRecipeImage(@PathParam("id") Long id, @FormParam("image") InputStream imageInputStream) {

@@ -27,6 +27,25 @@ public class RabbitMQPublisher implements MessagePublisher {
 
     @Override
     public void publishRecipeInfo(RecipeInfo info) {
-        emitter.send(new RecipeCreatedEvent(info.id().id(), info.name(), info.portions(), info.recipeIngredients(), info.userId()));
+        emitter.send(event(info, null, false));
+    }
+
+    @Override
+    public void publishRecipeUpdated(RecipeInfo info, String previousName) {
+        boolean renamed = previousName != null && !previousName.equals(info.name());
+        emitter.send(event(info, renamed ? previousName : null, false));
+    }
+
+    @Override
+    public void publishRecipeDeleted(RecipeInfo info) {
+        // Zutaten und Portionen bleiben gefuellt: ein Empfaenger, der "deleted"
+        // noch nicht kennt, behandelt die Meldung wie eine Aenderung und darf
+        // dabei nichts verlieren.
+        emitter.send(event(info, null, true));
+    }
+
+    private static RecipeCreatedEvent event(RecipeInfo info, String previousName, boolean deleted) {
+        return new RecipeCreatedEvent(info.id().id(), info.name(), info.portions(), info.recipeIngredients(), info.userId(),
+                previousName, deleted);
     }
 }
